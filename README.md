@@ -37,34 +37,7 @@
 
 ------
 
-## **项目结构**
-'''
-src/
-├── assets/                 # 全局样式和资源
-│   ├── base.css            # 基础样式
-│   ├── main.css            # 主样式
-├── components/             # Vue 组件
-│   ├── Calendar.vue        # 日历组件
-│   ├── DailyFinance.vue    # 每日财务记录组件
-│   ├── FinanceStates.vue   # 财务统计组件
-│   ├── PeriodStates.vue    # 经期统计组件
-│   ├── WeightStates.vue    # 体重统计组件
-│   └── icons/              # 图标组件
-├── router/                 # 路由配置
-│   └── index.ts
-├── stores/                 # Pinia 状态管理
-│   ├── financeStore.ts     # 财务数据存储
-│   ├── trackStore.ts       # 通用追踪数据存储
-│   ├── weightStore.ts      # 体重数据存储
-├── types/                  # TypeScript 类型定义
-│   └── finance.ts
-├── views/                  # 页面级组件
-│   ├── AboutView.vue       # 关于页面
-│   └── HomeView.vue        # 首页
-├── App.vue                 # 根组件
-├── main.ts                 # 应用入口
-└── index.html              # HTML 模板
-'''
+
 ## **安装与运行**
 
 ### **1. 克隆项目**
