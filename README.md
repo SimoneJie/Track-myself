@@ -213,7 +213,7 @@ npm run preview
 
   ![图片描述文字](/images/weight.png)
 
-  ![图片描述文字](/images/weight2.png)
+  ​
 
 - 经期追踪
 
