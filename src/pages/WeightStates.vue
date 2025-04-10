@@ -26,7 +26,7 @@
 
     <!-- 体重趋势图 -->
     <div class="chart-container">
-      <canvas ref="weightChart"></canvas>
+      <div ref="weightChart" style="width: 100%; height: 350px;"></div>
     </div>
 
     <!-- 每日数据表格 -->
@@ -61,14 +61,12 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useTrackStore } from '@/stores/trackStore'
-import { Chart, registerables } from 'chart.js'
-
-Chart.register(...registerables)
+import * as echarts from 'echarts'
 
 const trackStore = useTrackStore()
 const currentDate = ref(new Date())
-const weightChart = ref<HTMLCanvasElement | null>(null)
-let chartInstance: Chart | null = null
+const weightChart = ref<HTMLDivElement | null>(null)
+let chartInstance: echarts.ECharts | null = null
 
 // 当前年月
 const currentYear = computed(() => currentDate.value.getFullYear())
@@ -136,73 +134,64 @@ const changeMonth = (delta: number) => {
   trackStore.setCurrentMonth(currentYear.value, currentMonth.value)
 }
 
-// 渲染图表
+// 渲染 ECharts 图表
 const renderChart = () => {
   if (!weightChart.value) return
   
   if (chartInstance) {
-    chartInstance.destroy()
+    chartInstance.dispose()
   }
-  
-  // 准备图表数据
+
+  chartInstance = echarts.init(weightChart.value)
+
   const labels = monthlyData.value.map(day => `${day.day}日`)
-  const weights = monthlyData.value.map(day => day.weight ?? null); // Replace undefined with null
+  const weights = monthlyData.value.map(day => day.weight ?? null)
   const hasDataPoints = monthlyData.value.map(day => day.hasRecord)
-  
-  chartInstance = new Chart(weightChart.value, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: '体重 (kg)',
-        data: weights,
-        borderColor: '#4CAF50',
-        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-        borderWidth: 2,
-        tension: 0.3,
-        fill: true,
-        pointBackgroundColor: (ctx) => {
-          return hasDataPoints[ctx.dataIndex] ? '#4CAF50' : 'rgba(0,0,0,0)'
-        },
-        pointRadius: (ctx) => hasDataPoints[ctx.dataIndex] ? 5 : 0,
-        pointHoverRadius: (ctx) => hasDataPoints[ctx.dataIndex] ? 7 : 0
-      }]
+
+  const option = {
+    title: {
+      text: '体重趋势图',
+      left: 'center'
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: false,
-          min: 35, // 设置 y 轴的最小值
-          max: 100, // 设置 y 轴的最大值
-          title: {
-            display: true,
-            text: '体重 (kg)'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: '日期'
-          }
-        }
-      },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            title: (context) => {
-              return `${currentMonth.value}月${context[0].label}`
-            },
-            label: (context) => {
-              const value = context.raw
-              return value ? `体重: ${value} kg` : '无记录'
-            }
-          }
-        }
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const data = params[0].data
+        return data ? `${params[0].axisValue}<br/>体重: ${data} kg` : `${params[0].axisValue}<br/>无记录`
       }
-    }
-  })
+    },
+    xAxis: {
+      type: 'category',
+      data: labels,
+      name: '日期'
+    },
+    yAxis: {
+      type: 'value',
+      name: '体重 (kg)',
+      min: 35,
+      max: 100
+    },
+    series: [
+      {
+        name: '体重 (kg)',
+        type: 'line',
+        data: weights,
+        smooth: true,
+        lineStyle: {
+          color: '#4CAF50'
+        },
+        areaStyle: {
+          color: 'rgba(76, 175, 80, 0.1)'
+        },
+        itemStyle: {
+          color: '#4CAF50'
+        },
+        symbolSize: (value: any, params: any) => (hasDataPoints[params.dataIndex] ? 6 : 0)
+      }
+    ]
+  }
+
+  chartInstance.setOption(option)
 }
 
 // 监听月份变化重新渲染图表

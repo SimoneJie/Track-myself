@@ -3,24 +3,24 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    component: () => import('../components/Calendar.vue')
+    component: () => import('../pages/index/index.vue')
   },
   {
     path: '/weight-stats',
-    component: () => import('../components/WeightStates.vue')
+    component: () => import('../pages/WeightStates.vue')
   },
   {
     path: '/finance-stats',
-    component: () => import('../components/FinanceStates.vue')
+    component: () => import('../pages/FinanceStates.vue')
   },
   {
     path: '/period-stats',
-    component: () => import('../components/PeriodStates.vue')
+    component: () => import('../pages/PeriodStates.vue')
   },
   {
     path: '/finance-daily/:date',
     name: 'FinanceDaily',
-    component: () => import('../components/DailyFinance.vue'),
+    component: () => import('../pages/DailyFinance.vue'),
     props: true
   }
 ]

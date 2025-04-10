@@ -4,11 +4,11 @@
       <h2 v-if="!showYearView">{{ currentYear }}年{{ currentMonth }}月财务统计</h2>
       <h2 v-else>{{ currentYear }}年财务统计</h2>
       <div class="time-switcher">
-        <button @click="changeMonth(-1, showYearView)">{{showYearView?'← 上年':'← 上月'}} </button>
+        <button @click="changeMonth(-1, showYearView)">{{ showYearView ? '← 上年' : '← 上月' }}</button>
         <button @click="showYearView = !showYearView">
           {{ showYearView ? '返回月视图' : '查看年度统计' }}
         </button>
-        <button @click="changeMonth(1, showYearView)">{{showYearView?'下年 →':'下月 →'}}</button>
+        <button @click="changeMonth(1, showYearView)">{{ showYearView ? '下年 →' : '下月 →' }}</button>
       </div>
     </div>
 
@@ -31,7 +31,7 @@
 
       <div class="chart-container">
         <h3>每日收支趋势</h3>
-        <canvas ref="dailyChart"></canvas>
+        <div ref="dailyChart" style="width: 100%; height: 400px;"></div>
       </div>
     </div>
 
@@ -54,7 +54,7 @@
 
       <div class="chart-container">
         <h3>月度收支趋势</h3>
-        <canvas ref="monthlyChart"></canvas>
+        <div ref="monthlyChart" style="width: 100%; height: 400px;"></div>
       </div>
     </div>
   </div>
@@ -62,10 +62,8 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import * as echarts from 'echarts'
 import { useFinanceStore } from '@/stores/financeStore'
-import { storeToRefs } from 'pinia'
-import { Chart, registerables } from 'chart.js'
-Chart.register(...registerables)
 
 const financeStore = useFinanceStore()
 const currentDate = ref(new Date())
@@ -81,25 +79,7 @@ const monthlyData = computed(() => {
 const yearlyData = computed(() => {
   return financeStore.getYearlySummary(currentYear.value)
 })
-
-const changeMonth = (delta: number, year:boolean) => {
-  currentDate.value = new Date(
-    currentDate.value.getFullYear() + (year ? delta : 0),
-    currentDate.value.getMonth() + delta,
-    1
-  )
-}
-
-// 图表相关
-const dailyChart = ref<HTMLCanvasElement | null>(null)
-const monthlyChart = ref<HTMLCanvasElement | null>(null)
-let dailyChartInstance: Chart | null = null
-let monthlyChartInstance: Chart | null = null
-
-const renderDailyChart = () => {
-  if (!dailyChart.value) return
-  
-  // 按日分组数据
+ // 按日分组数据
   const daysInMonth = new Date(
     currentYear.value, 
     currentMonth.value, 
@@ -118,117 +98,166 @@ const renderDailyChart = () => {
     }
   })
   
-  if (dailyChartInstance) {
-    dailyChartInstance.destroy()
+const changeMonth = (delta: number, year: boolean) => {
+  currentDate.value = new Date(
+    currentDate.value.getFullYear() + (year ? delta : 0),
+    currentDate.value.getMonth() + delta,
+    1
+  )
+}
+
+// 图表相关
+const dailyChart = ref<HTMLDivElement | null>(null)
+const monthlyChart = ref<HTMLDivElement | null>(null)
+let dailyChartInstance: echarts.ECharts | null = null
+let monthlyChartInstance: echarts.ECharts | null = null
+
+const renderDailyChart = () => {
+  if (!dailyChart.value) {
+    console.error('Daily chart container is not ready')
+    return
   }
-  
-  dailyChartInstance = new Chart(dailyChart.value, {
-    type: 'bar',
-    data: {
-      labels: Array.from({length: daysInMonth}, (_, i) => `${i + 1}日`),
-      datasets: [
-        {
-          label: '收入',
-          data: dailyIncome,
-          backgroundColor: '#4CAF50',
-          borderColor: '#4CAF50',
-          borderWidth: 1
-        },
-        {
-          label: '支出',
-          data: dailyExpense,
-          backgroundColor: '#F44336',
-          borderColor: '#F44336',
-          borderWidth: 1
-        }
-      ]
+
+  if (dailyChartInstance) {
+    dailyChartInstance.dispose() // 销毁旧实例
+    dailyChartInstance = null
+  }
+ 
+  // 创建新的实例
+  dailyChartInstance = echarts.init(dailyChart.value)
+  const option = {
+    title: {
+      text: '每日收支趋势',
+      left: 'center'
     },
-    options: {
-      responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: '金额 (¥)'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: '日期'
-          }
+    tooltip: {
+      trigger: 'axis'
+    },
+    xAxis: {
+      type: 'category',
+      data: Array.from({ length: 31 }, (_, i) => `${i + 1}日`)
+    },
+    yAxis: {
+      type: 'value',
+      name: '金额 (¥)'
+    },
+    series: [
+      {
+        name: '收入',
+        type: 'bar',
+        data: dailyIncome, 
+        itemStyle: {
+          color: '#4CAF50'
+        }
+      },
+      {
+        name: '支出',
+        type: 'bar',
+        data: dailyExpense, 
+        itemStyle: {
+          color: '#F44336'
         }
       }
-    }
-  })
+    ]
+  }
+
+  dailyChartInstance.setOption(option)
 }
 
 const renderMonthlyChart = () => {
-  if (!monthlyChart.value) return
-  
-  if (monthlyChartInstance) {
-    monthlyChartInstance.destroy()
+  if (!monthlyChart.value) {
+    return
   }
-  
-  monthlyChartInstance = new Chart(monthlyChart.value, {
-    type: 'line',
-    data: {
-      labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-      datasets: [
-        {
-          label: '月收入',
-          data: yearlyData.value.monthlyData.map(m => m.income),
-          borderColor: '#4CAF50',
-          backgroundColor: 'rgba(76, 175, 80, 0.1)',
-          tension: 0.3,
-          fill: true
-        },
-        {
-          label: '月支出',
-          data: yearlyData.value.monthlyData.map(m => m.expense),
-          borderColor: '#F44336',
-          backgroundColor: 'rgba(244, 67, 54, 0.1)',
-          tension: 0.3,
-          fill: true
-        },
-        {
-          label: '月结余',
-          data: yearlyData.value.monthlyData.map(m => m.balance),
-          borderColor: '#2196F3',
-          backgroundColor: 'rgba(33, 150, 243, 0.1)',
-          tension: 0.3,
-          fill: true
-        }
-      ]
+
+  if (monthlyChartInstance) {
+    monthlyChartInstance.dispose() // 销毁旧实例
+    monthlyChartInstance = null
+  }
+ 
+  // 创建新的实例
+  monthlyChartInstance = echarts.init(monthlyChart.value)
+
+  const option = {
+    title: {
+      text: '月度收支趋势',
+      left: 'center'
     },
-    options: {
-      responsive: true,
-      scales: {
-        y: {
-          beginAtZero: false,
-          title: {
-            display: true,
-            text: '金额 (¥)'
-          }
+    tooltip: {
+      trigger: 'axis'
+    },
+    xAxis: {
+      type: 'category',
+      data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+    },
+    yAxis: {
+      type: 'value',
+      name: '金额 (¥)'
+    },
+    series: [
+      {
+        name: '月收入',
+        type: 'line',
+        data: yearlyData.value.monthlyData.map(m => m.income),
+        itemStyle: {
+          color: '#4CAF50'
+        },
+        areaStyle: {
+          color: 'rgba(76, 175, 80, 0.1)'
         }
+      },
+      {
+        name: '月支出',
+        type: 'line',
+        data: yearlyData.value.monthlyData.map(m => m.expense),
+        itemStyle: {
+          color: '#F44336'
+        },
+        areaStyle: {
+          color: 'rgba(244, 67, 54, 0.1)'
+        }
+      },
+      {
+        name: '月结余',
+        type: 'line',
+        data: yearlyData.value.monthlyData.map(m => m.balance),
+        itemStyle: {
+          color: '#2196F3'
+        },
+        areaStyle: {
+          color: 'rgba(33, 150, 243, 0.1)'
+        }
+      }
+    ]
+  }
+
+  monthlyChartInstance.setOption(option)
+}
+
+onMounted(() => {
+  nextTick(() => {
+    renderDailyChart()
+    if(showYearView.value){
+      renderMonthlyChart()}
+  })
+})
+
+watch([monthlyData, showYearView], () => {
+  nextTick(() => {
+    if (!showYearView.value) {
+      if (dailyChart.value) {
+        renderDailyChart()
+      } else {
+        console.error('Daily chart container is not ready after view switch')
+      }
+    } else {
+      if (monthlyChart.value) {
+        renderMonthlyChart()
+      } else {
+        console.error('Monthly chart container is not ready after view switch')
       }
     }
   })
-}
-
-// 监听数据变化重新渲染图表
-watch([monthlyData, showYearView], () => {
-  if (!showYearView.value) {
-    nextTick(() => renderDailyChart())
-  } else {
-    nextTick(() => renderMonthlyChart())
-  }
 }, { deep: true })
-
-onMounted(() => {
-  renderDailyChart()
-})
 </script>
 
 <style scoped>

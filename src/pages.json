@@ -1,0 +1,40 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页"
+			}
+		},
+		{
+			"path": "pages/WeightStates",
+			"style": {
+				"navigationBarTitleText": "体重统计"
+			}
+		},
+		{
+			"path": "pages/FinanceStates",
+			"style": {
+				"navigationBarTitleText": "财务统计"
+			}
+		},
+		{
+			"path": "pages/PeriodStates",
+			"style": {
+				"navigationBarTitleText": "经期统计"
+			}
+		},
+		{
+			"path": "pages/DailyFinance",
+			"style": {
+				"navigationBarTitleText": "每日财务"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	}
+}

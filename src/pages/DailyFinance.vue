@@ -44,28 +44,31 @@
     <!-- 添加新交易 -->
     <div class="add-transaction">
       <h3>添加新记录</h3>
-      <form @submit.prevent="handleSubmit">
-        <div class="form-group">
-          <label>条目</label>
-          <input 
-            v-model.lazy="text"
+      <!-- @submit.prevent="handleSubmit" -->
+      <form >
+        <div > 
+          <label for = "transaction-text">条目</label>
+          <input
+            id = "transaction-text" 
+            v-model="text"
             type="text" 
             placeholder="Enter text..." 
             required
           />
         </div>
-        <div class="form-group">
-          <label>金额</label>
+        <div>
+          <label for="transaction-amount">金额</label>
           <div class="hint">(负数 - 支出,正数 - 收入)</div>
           <input
-            v-model.number.lazy="amount"
+            id = "transaction-amount" 
+            v-model.number="amount"
             type="number"
             step="0.01"
             placeholder="Enter amount..."
             required
           />
         </div>
-        <button type="submit">添加记录</button>
+        <button type="submit" @click = "handleSubmit">添加记录</button>
       </form>
     </div>
   </div>
@@ -74,14 +77,17 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
 import { useFinanceStore } from '@/stores/financeStore'
-import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { onLoad } from '@dcloudio/uni-app'
 
-const route = useRoute()
+
 const financeStore = useFinanceStore()
-
+onLoad((options = {}) => {
+  const date = options.date || new Date().toISOString().split('T')[0]
+  financeStore.setCurrentDate(date)
+})
 // 设置当前日期（从路由参数获取）
-financeStore.setCurrentDate(route.params.date as string || new Date().toISOString().split('T')[0])
+
 
 const text = ref('')
 const amount = ref<number | null>(null)
@@ -105,7 +111,15 @@ const expense = computed(() => dailyTransactions.value
 const balance = computed(() => income.value - expense.value)
   
 const handleSubmit = () => {
-  if (amount.value === null) return
+  if (!text.value.trim()) {
+    alert('请输入条目名称')
+    return
+  }
+
+  if (amount.value === null || isNaN(amount.value)) {
+    alert('请输入有效的金额')
+    return
+  }
  
   financeStore.addTransaction({
     date: financeStore.currentDate,
@@ -134,12 +148,14 @@ const deleteTransaction = (id: string) => {
 }
 
 .finance-page {
-  max-width: 200%; /* 或者设置更大的值 */
-  width: 150%;
+  width: 100%;
+  max-width: 900px; /* 或根据需求调整 */
   margin: 0 auto;
   padding: 20px;
   font-family: Arial, sans-serif;
 }
+
+/* 移除之前异常的 200% 和 150% 设置 */
 
 @media (min-width: 768px) {
   .finance-page {
@@ -267,9 +283,7 @@ h2, h3, h4 {
   padding-top: 20px;
 }
 
-.form-group {
-  margin-bottom: 15px;
-}
+
 
 .form-group label {
   display: block;
@@ -289,6 +303,9 @@ h2, h3, h4 {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 16px;
+  /* 确保没有以下属性 */
+  pointer-events: none;
+  opacity: 1 !important;
 }
 
 button {

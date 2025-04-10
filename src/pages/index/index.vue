@@ -1,6 +1,5 @@
 <template>
   <div class="calendar-container">
-    <h2 id="title">Track Myself</h2>
    
     <!-- 三个功能按钮
     <div class="button-group">
@@ -96,6 +95,7 @@
       <el-button 
         :type="calculateBalance(new Date(selectedDate) )>= 0 ? 'success' : 'danger'" 
         @click="navigateToFinance">{{ calculateBalance(new Date(selectedDate) )}}元</el-button>
+        
     </div>
 
     <!-- 经期记录 -->
@@ -121,14 +121,11 @@ import { ref, computed, onMounted } from 'vue'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { useTrackStore } from '@/stores/trackStore'
 import { useFinanceStore } from '@/stores/financeStore'
-import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash'
-const router = useRouter()
 const trackStore = useTrackStore()
 const financeStore = useFinanceStore()
 const { balance, income, expense, dailyTransactions } = storeToRefs(financeStore)
-
 
 onMounted(() => {
     if (trackStore.records.length === 0) {
@@ -142,15 +139,19 @@ interface CalendarDay {
   isToday?: boolean
 }
 const carouselItems = ref([
-  { title: '体重追踪', description: '查看体重变化趋势', route: '/weight-stats' },
-  { title: '账单追踪', description: '管理每日收支记录', route: '/finance-stats' },
-  { title: '经期追踪', description: '记录和分析经期数据', route: '/period-stats' }
+  { title: '体重追踪', description: '查看体重变化趋势', route: '/pages/WeightStates' },
+  { title: '账单追踪', description: '管理每日收支记录', route: '/pages/FinanceStates' },
+  { title: '经期追踪', description: '记录和分析经期数据', route: '/pages/PeriodStates' }
 ])
 const navigateTo = (path: string) => {
-  router.push(path)
+  uni.navigateTo({
+    url: path
+  })
 }
 const navigateToFinance = () => {
-  router.push(`/finance-daily/${selectedDate.value}`)
+  uni.navigateTo({
+  url: `/pages/DailyFinance?date=${selectedDate.value}`
+})
   closeDialog()
 }
 const currentDate = ref<Date>(new Date())
